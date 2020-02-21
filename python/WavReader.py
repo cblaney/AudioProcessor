@@ -24,17 +24,20 @@ class WavReader:
         # Read in wav file
         self.sampleRate, self.data = wavfile.read(filepath)
 
+        # Transpose data
+        self.data = self.data.T
+
         # Get number of samples and channels
-        self.numSamples = np.size(self.data,0)  # 0th dimension: Samples
-        self.numChannels = np.size(self.data,1) # 1th dimension: Channels
+        self.numChannels = np.size(self.data,0) # 0th dimension: Channels
+        self.numSamples  = np.size(self.data,1) # 1th dimension: Samples
+
 
 
     ## Returns wav data as single channel audio
     def getMono(self):
         
         # return the normalized sum across the channels
-        return np.sum(self.data, axis=1)/self.numChannels
-
+        return np.sum(self.data, axis=0)/self.numChannels
 
     ## Plots the wav file
     def plot(self):
@@ -48,8 +51,8 @@ class WavReader:
         # create sub plot number based on number of channels
         spn = self.numChannels*100 + 11 
 
-        # Loop through all channels (transposing data)
-        for chan in self.data.T: 
+        # Loop through all channels
+        for chan in self.data: 
             plt.subplot(spn)        # Create subplot
             plt.plot(time, chan)    # plot the data
             plt.xlabel('time (s)')
@@ -58,10 +61,11 @@ class WavReader:
         
     
 # Test code
-interactive(True)
-wr = WavReader('./../audio/c_chord.wav')
-plt.figure()
-plt.plot(wr.getMono())
-wr.plot()
-input('press return to continue')
-
+if (__name__ == "__main__"):
+    interactive(True)
+    wr = WavReader('./../audio/c_chord.wav')
+    plt.figure()
+    plt.plot(wr.getMono())
+    wr.plot()
+    input('press return to continue')
+    
