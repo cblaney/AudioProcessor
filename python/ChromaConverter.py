@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib import interactive
 import numpy as np
 
-    
 
 ## Object to create Chroma representations of signal data
 #
@@ -38,9 +37,12 @@ class ChromaConverter:
         # loop and calculate singleChroma
         chromagram = []
         for i in indexes:
-            windowed = np.pad(sig[i:i+windowsize]*win,(0,fftsize-windowsize%fftsize))
-            chromagram.append(self.getSingleChroma(windowed))
-
+            if(np.amax(sig[i:i+windowsize]) > 0):
+                windowed = np.pad(sig[i:i+windowsize]*win,(0,fftsize-windowsize%fftsize))
+                chromagram.append(self.getSingleChroma(windowed))
+            else:
+                chromagram.append(np.zeros(np.size(self.pitch,0)))
+            
         return indexes,np.array(chromagram)
    
     ## Returns Chroma for input time domain signal
@@ -55,7 +57,7 @@ class ChromaConverter:
         # Take DFT
         spec = np.fft.fft(sig)
         spec = spec[0:int((len(spec))/2)]
-
+        
         # convert to log    
         logSpec = 10*np.log10(self.unzero(abs(spec)) ** 2)
 
@@ -95,8 +97,8 @@ if (__name__ == "__main__"):
     interactive(True)
     
     # Read in wav and get mono data
-    wr = WavReader.WavReader('./../audio/c_chord.wav')
-    sig = wr.getMono()+1
+    wr = WavReader.WavReader('./../audio/C Chord - 1.3 - Acoustic Piano.wav')
+    sig = wr.getMono()
 
     plt.figure()
     plt.plot(sig)
@@ -109,8 +111,8 @@ if (__name__ == "__main__"):
 
     plt.figure()
     indexes, chromagram = cc.getChromagram(sig, 2 ** 19, 2 ** 13, 2 ** 12)
-    
-    plt.imshow(chromagram.T)
+
+    plt.imshow(chromagram.T, aspect='auto')
 
     input('press return to continue')
 
