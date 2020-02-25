@@ -17,6 +17,7 @@ class ChromaConverter:
     #
     # Setup ChromaConverter by calculating frequency spectrum and pitches
     #
+    # A0_idx=21
     def __init__(self, fs, P_0=0, P_N=120, dev=1, A4_Hz=440, A4_idx=69):
         self.sampleFreq = fs
         self.dev = dev
@@ -26,7 +27,8 @@ class ChromaConverter:
 
     
     ## Computes chromagram
-    def getChromagram(self, sig, fftsize, windowsize, overlap):
+    #
+    def getChromagram(self, sig, fftsize=(2**19), windowsize=(2**13), overlap=int(2**12.5)):
         
         # create window
         win = np.hamming(windowsize)
@@ -57,21 +59,19 @@ class ChromaConverter:
         # Take DFT
         spec = np.fft.fft(sig)
         spec = spec[0:int((len(spec))/2)]
-        
-        # convert to log    
-        logSpec = 10*np.log10(self.unzero(abs(spec)) ** 2)
 
         # Create Chroma
-        return self.calculateChroma(logSpec, self.freq, self.pitch, self.dev)
+        return self.calculateChroma(abs(spec)/len(sig), self.freq, self.pitch, self.dev)
     
     ## Calculates chroma
     #
     # Y(n) = SUM_0<=w<=W( { P(n-0.5) <= w < P(n+0.5): X(w) } )
     def calculateChroma(self, spec, freq, pitch, dev):
-        chroma = np.arange(0, np.size(pitch,0))
-        for i in chroma:
-            chroma[i] = self.getSumBins([pitch[i]-dev*0.5,pitch[i]+dev*0.5], spec, freq)
-        return chroma;
+        chroma = []
+        for p in pitch:
+            chroma.append(self.getSumBins([p-dev*0.5, p+dev*0.5], spec, freq))
+        # perform Logarithmic compression
+        return np.log(1+10*self.unzero(chroma));
     
     ## Aggregates bin values between two frequencies
     #
@@ -81,6 +81,7 @@ class ChromaConverter:
     
     ## Calculates frequency of pitch at index
     #
+    # f_A4=440(p) = 2^(p-69)/12 * 440
     def getPitchFreq(self, idx, A4_Hz=440, A4_idx=69):
         return 2 ** ((idx - A4_idx)/12) * A4_Hz
 
@@ -98,6 +99,8 @@ if (__name__ == "__main__"):
     
     # Read in wav and get mono data
     wr = WavReader.WavReader('./../audio/C Chord - 1.3 - Acoustic Piano.wav')
+#    wr = WavReader.WavReader('/mnt/d/Sheet Music/Guitar Bass/Audio Testing/BtBaM - Mirrors.wav')
+#    wr = WavReader.WavReader('/mnt/d/Music/The Great Misdirect (Vinyl Remaster)/01 Mirrors.wav')
     sig = wr.getMono()
 
     plt.figure()
@@ -110,9 +113,15 @@ if (__name__ == "__main__"):
     plt.imshow( [ cc.pitch_idx, chroma ] )
 
     plt.figure()
-    indexes, chromagram = cc.getChromagram(sig, 2 ** 19, 2 ** 13, 2 ** 12)
+    plt.plot(cc.pitch_idx, chroma)
+
+    plt.figure()
+    indexes, chromagram = cc.getChromagram(sig)
 
     plt.imshow(chromagram.T, aspect='auto')
+
+    plt.figure()
+    plt.plot(chromagram[60])
 
     input('press return to continue')
 

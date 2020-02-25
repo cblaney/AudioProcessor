@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 from matplotlib import interactive
 import numpy as np
 from scipy.io import wavfile
+#24bit accessible version
+import sys
+sys.path.append('./')
+import wavfile
 
 ## Object to read in wav files
 # 
@@ -22,7 +26,8 @@ class WavReader:
     def __init__(self, filepath):
         
         # Read in wav file
-        self.sampleRate, self.data = wavfile.read(filepath)
+        self.sampleRate, self.data, bits = wavfile.read(filepath, log=False)
+        #self.sampleRate, self.data = wavfile.read(filepath)
 
         # Transpose data
         self.data = self.data.T
