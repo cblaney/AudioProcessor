@@ -8,6 +8,13 @@ import matplotlib.pyplot as plt
 from matplotlib import interactive
 import numpy as np
 
+## Returns the number of overtones for a given pitch and pitch maxima vector
+def getNumberOvertones(pitch, maxima):
+    overtones = 0;
+    while ( (maxima == getOvertonePitch(overtones, pitch)).any() ):
+        overtones += 1
+    return overtones
+
 ## Returns harmonic pitch 
 # 
 # O = 12*log2(ov+1)
@@ -46,20 +53,16 @@ if (__name__ == "__main__"):
    
     #for c in chromagram: 
    
-    c = chromagram[10]
+    c = chromagram[48]
  
     # a[n] > a[n+1]  &  a[n] > a[n-1]
     m1_val, m1_idx = getMaxima(c)
 
-    print(m1_val, m1_idx)
-
     m2_val, m2_idx = getMaxima(m1_val)
     m2_idx = m1_idx[m2_idx]
-    print(m2_val, m2_idx)
 
     m3_val, m3_idx = getMaxima(m2_val)
     m3_idx = m2_idx[m3_idx]
-    print(m3_val, m3_idx)
 
     plt.figure()
     plt.plot(np.arange(len(c)), c)
@@ -76,15 +79,15 @@ if (__name__ == "__main__"):
     plt.plot(c_1) 
 
     print(cc.getPitchFreq(m2_idx))
+#    print(2, getOvertonePitch(2,m3_idx[0]), (m1_idx == getOvertonePitch(2,m3_idx[0])).any() )
 
-    print(0, getOvertonePitch(0,m3_idx[0]), (m1_idx == getOvertonePitch(0,m3_idx[0])).any() )
-    print(1, getOvertonePitch(1,m3_idx[0]), (m1_idx == getOvertonePitch(1,m3_idx[0])).any() )
-    print(2, getOvertonePitch(2,m3_idx[0]), (m1_idx == getOvertonePitch(2,m3_idx[0])).any() )
-    print(3, getOvertonePitch(3,m3_idx[0]), (m1_idx == getOvertonePitch(3,m3_idx[0])).any() )
-    print(4, getOvertonePitch(4,m3_idx[0]), (m1_idx == getOvertonePitch(4,m3_idx[0])).any() )
-    print(5, getOvertonePitch(5,m3_idx[0]), (m1_idx == getOvertonePitch(5,m3_idx[0])).any() )
-    print(6, getOvertonePitch(6,m3_idx[0]), (m1_idx == getOvertonePitch(6,m3_idx[0])).any() )
-    print(7, getOvertonePitch(7,m3_idx[0]), (m1_idx == getOvertonePitch(7,m3_idx[0])).any() )
+    roots = []
+    for r in m1_idx:
+        numOv = getNumberOvertones(r, m1_idx)
+        if(numOv >= 2):
+            print(r, numOv)
+
+    
 
 
     
