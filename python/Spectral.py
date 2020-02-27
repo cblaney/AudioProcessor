@@ -67,6 +67,15 @@ def unzero( a):
 def PitchIndexes(b, F_coef, R=100, w_ref=8):
     return np.where(BinIndex(F_coef,R,w_ref)==b)[0]
 
+#
+#
+# if B(ω) = floor(1200/R log_2(ω/ω_ref) + 1.5/12)
+# then
+# F(b) = w_ref * 2^((b-4.5/12)R/1200)
+def BinFrequency(b, R=100, w_ref=8):
+    return w_ref * (2 ** ((b-0.375)*R/1200))
+    
+
 ## Returns a log-frequency spectrogram
 #
 # Refined Log-Frequency Spectrogram:
@@ -205,6 +214,24 @@ def ILFSTFT(x, Fs, N, H, N_p=128, R=100, w_ref=8):
     P, Y_ILF = InstLogFreqSpectrogram(Xx, Fs, N, H, F_coef, N_p,R,w_ref)
     return T_coef, P, Y_ILF
     
+
+#
+# Harmonic Summation
+#
+# For the Spectrogram Y: 
+# Y_H(n,k) = SUM_{h=1}^{H} ( Y(n,kh) )
+#
+# For Log Frequency Spectrogram Y_LF:
+# Y_HLF(n,b) = SUM_{h=1}^{H} ( Y_LF(n, b + floor(log2(h)1200/R) ) )
+def HarmonicSum(X, H=4):
+    
+    # Create zero padded spectral
+    X_z = np.append(X, np.zeros(len(X)*(H-1)))
+
+    X_H = X.copy()
+ 
+        
+
 
 # Testing code
 if (__name__ == "__main__"):

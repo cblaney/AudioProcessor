@@ -35,25 +35,33 @@ def getMaxima(arr):
 # Testing Code
 if (__name__ == "__main__"):
     import WavReader
+    import Spectral
     import ChromaConverter
     interactive(True)
 
     # Read in wav and get mono data
     wr = WavReader.WavReader('./../audio/C Chord - 1.3 - Acoustic Piano.wav')
     sig = wr.getMono()
+
     # Get Chromagram
-    cc = ChromaConverter.ChromaConverter(wr.sampleRate)
-    indexes, chromagram = cc.getChromagram(sig)
+    print('Calculating Chromagram')
+    #T, P, chromagram = Spectral.ILFSTFT(sig, wr.sampleRate, 2**13, 2**12, N_p=256, R=50)
+    T, P, chromagram = Spectral.ILFSTFT(sig, wr.sampleRate, 2**13, 2**12)
+    
     # plot chromagram
     plt.figure()
-    plt.imshow(chromagram.T, aspect='auto')
-    print(indexes)
+    plt.pcolormesh(T, P, abs(chromagram.T))
+    plt.figure()
+    plt.pcolormesh(np.arange(len(T)), P, np.sqrt(abs(chromagram.T)))
+
+    chromagram = np.sqrt(abs(chromagram))
 
     # find notes!
+    print('Finding Notes')
    
     #for c in chromagram: 
    
-    c = chromagram[48]
+    c = chromagram[29]
  
     # a[n] > a[n+1]  &  a[n] > a[n-1]
     m1_val, m1_idx = getMaxima(c)
@@ -78,7 +86,7 @@ if (__name__ == "__main__"):
     plt.figure()
     plt.plot(c_1) 
 
-    print(cc.getPitchFreq(m2_idx))
+    print(Spectral.BinFrequency(m2_idx))
 #    print(2, getOvertonePitch(2,m3_idx[0]), (m1_idx == getOvertonePitch(2,m3_idx[0])).any() )
 
     roots = []
