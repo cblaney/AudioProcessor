@@ -39,6 +39,9 @@ def STFT(x, Fs, N, H):
     F_coef, T_coef, Xx = signal.stft(x, Fs, nperseg=N, noverlap=N-H, return_onesided=True)
     return T_coef, F_coef, Xx.T
 
+def iSTFT(Xx, Fs, N, H):
+    return signal.istft(Xx.T, Fs, nperseg=N, noverlap=N-H, input_onesided=True)
+
 
 ## Returns the pitch bin index for given frequency
 #
@@ -55,7 +58,7 @@ def BinIndex(w, R=100, w_ref=8):
 
 def unzero( a):
         b=np.array(a,dtype=np.float)
-        b[b==0]=1e-10
+        b[b==0]=1e-14
         return b
 
 ## Returns the set of F_coef indexes for pitch bin b

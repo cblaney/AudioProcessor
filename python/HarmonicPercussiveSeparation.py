@@ -23,6 +23,7 @@ import numpy as np
 #                       the input lies within range [-0.5, 0.5] )
 #   γ "gamma" {alt+947}
 #   δ "delta" {alt+948}
+#   ε "epsilon" {alt+949}
 #   μ "mu" {alt+956}
 #   π "pi" {alt+960}
 #   φ "phi" {alt+966}
@@ -115,6 +116,33 @@ def VertMedianFilter(Y, Lp):
     return MedianFilterSpectral(Y,Lp)
 
 
+## Binary Masking
+#
+#             ⎧ 1, Y^h(n,k) >= Y^p(n,k)
+# M^h(n,k) := ⎨ 
+#             ⎩ 0, otherwise
+#
+#             ⎧ 1, Y^h(n,k) < Y^p(n,k)
+# M^p(n,k) := ⎨ 
+#             ⎩ 0, otherwise
+#
+def BinaryMask(Yh, Yp):
+    Mh = (Yh >= Yp)
+    return np.array(Mh,dtype=int), np.array(~Mh,dtype=int)
+
+## Soft Masking
+#
+#   M^h(n,k) := (Y^h(n,k) + ε/2) / (Y^h(n,k) + Y^p(n,k) + ε)
+#   M^p(n,k) := (Y^p(n,k) + ε/2) / (Y^h(n,k) + Y^p(n,k) + ε)
+#   Where ε is a small positive value added to avoid division by zero
+#
+def SoftMask(Yh, Yp):
+    e = 1e-14
+    div = 1 / (Yh + Yp + e)
+    Mh = (Yh + e/2) * div
+    Mp = (Yp + e/2) * div
+    return Mh, Mp
+
 
 # Testing code
 if(__name__ == "__main__"):
@@ -127,30 +155,99 @@ if(__name__ == "__main__"):
     import Spectral
 
     # Collect mono audio
-    wr = WavReader.WavReader('./../audio/C Chord - 1.3 - Acoustic Piano.wav')
-    x = wr.getMono()
+#   wr = WavReader.WavReader('./../audio/C Chord - 1.3 - Acoustic Piano.wav')
+    wr = WavReader.WavReader('./../audio/Harmonic&Percussive - 1.2 - Violin.wav')
+    xh_o = wr.getMono()
+    Fs = wr.sampleRate
+    xp_o = WavReader.WavReader('./../audio/Harmonic&Percussive - 2.2 - Drumkit.wav').getMono()
+    x = xh_o + xp_o
+    t = np.arange(len(x))/Fs
     plt.figure()
-    plt.plot(x)
+    plt.title('Audio Signal')
+    plt.plot(t,x)
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Original Harmonic Audio Signal')
+    plt.plot(xh_o)
+    plt.subplot(212)
+    plt.title('Original Percussive Audio Signal')
+    plt.plot(xp_o)
 
     # Power Spectrogram
     print('Calculating Spectrogram')
-    T, F, Xx = Spectral.STFT(x, wr.sampleRate, 2**13, 2**12)
-    Y = abs(Xx)
+    T, F, Xx = Spectral.STFT(x, Fs, 2**13, 2**12)
+    Y = (abs(Xx) ** 2)
     #Y = abs(Xx) ** 2
     plt.figure()
-    plt.pcolormesh(T, F, abs(Y.T))
+    plt.title('Spectrogram')
+    plt.pcolormesh(T, F, abs(Xx.T))
 
     # Horz & Vert Median Filtered
     print('Horz Median Filtering')
     Yh = HorzMedianFilter(Y, 11)
     print('Vert Median Filtering')
-    Yp = VertMedianFilter(Y, 11)
-
+    Yp = VertMedianFilter(Y, 101)
     plt.figure()
-    plt.pcolormesh(T, F, abs(Yh.T))
-    plt.figure()
-    plt.pcolormesh(T, F, abs(Yp.T))
+    plt.subplot(211)
+    plt.title('Horizontal Median Filter')
+    plt.pcolormesh(T, F, Yh.T)
+    plt.subplot(212)
+    plt.title('Vertical Median Filter')
+    plt.pcolormesh(T, F, Yp.T)
 
+    #Masking
+    ##Binary
+    print('Generating Binary Masks')
+    Mhb, Mpb = BinaryMask(Yh, Yp)
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Horizontal Binary Mask')
+    plt.pcolormesh(T,F,Mhb.T)
+    plt.subplot(212)
+    plt.title('Vertical Binary Mask')
+    plt.pcolormesh(T,F,Mpb.T)
+
+    ##Soft
+    print('Generating Soft Masks')
+    Mhs, Mps = SoftMask(Yh, Yp)
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Horizontal Soft Mask')
+    plt.pcolormesh(T,F,Mhs.T)
+    plt.subplot(212)
+    plt.title('Vertical Soft Mask')
+    plt.pcolormesh(T,F,Mps.T)
+
+
+    #Apply
+    print('Applying Soft Mask')
+    Xh = Mhs * Xx
+    Xp = Mps * Xx
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Harmonic Spectrogram')
+    plt.pcolormesh(T,F,abs(Xh.T))
+    plt.subplot(212)
+    plt.title('Percussive Spectrogram')
+    plt.pcolormesh(T,F,abs(Xp.T))
+
+    # Get audio signals
+    print('Reconstructing Signals')
+    th, xh = Spectral.iSTFT(Xh, Fs, 2**13, 2**12)
+    tp, xp = Spectral.iSTFT(Xp, Fs, 2**13, 2**12)
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Reconstructed Harmonic Audio Signal')
+    plt.plot(th,xh)
+    plt.subplot(212)
+    plt.title('Reconstructed Percussive Audio Signal')
+    plt.plot(tp,xp)
+    
+    
+    
+
+    
+    
 
     input('press return to continue')
 
