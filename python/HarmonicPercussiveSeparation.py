@@ -221,8 +221,8 @@ if(__name__ == "__main__"):
 
     #Apply
     print('Applying Soft Mask')
-    Xh = Mhs * Xx
-    Xp = Mps * Xx
+    Xh = Mhb * Xx
+    Xp = Mpb * Xx
     plt.figure()
     plt.subplot(211)
     plt.title('Harmonic Spectrogram')

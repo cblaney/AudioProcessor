@@ -35,8 +35,8 @@ import numpy as np
 #
 # (8.2b) Xx(n,k) = {k: X[k] = FFT( x[nH:nH+N-1] w[:] ) }
 #
-def STFT(x, Fs, N, H):
-    F_coef, T_coef, Xx = signal.stft(x, Fs, nperseg=N, noverlap=N-H, return_onesided=True)
+def STFT(x, Fs, N, H, real=True):
+    F_coef, T_coef, Xx = signal.stft(x, Fs, nperseg=N, noverlap=N-H, return_onesided=real)
     return T_coef, F_coef, Xx.T
 
 def iSTFT(Xx, Fs, N, H):
